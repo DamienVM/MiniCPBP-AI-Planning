@@ -30,6 +30,7 @@ import minicpbp.util.StdBelief;
 import minicpbp.util.LogBelief;
 import minicpbp.engine.constraints.LinEqSystemModP;
 
+import java.io.PrintStream;
 import java.util.*;
 
 public class MiniCP implements Solver {
@@ -78,6 +79,9 @@ public class MiniCP implements Solver {
     private static boolean traceBP = false;
     private static boolean traceSearch = false;
     private static boolean traceEntropy = false;
+
+    //***** TRACING STREAMS *****
+    private static PrintStream traceBPstream = System.out;
     //****************************
 
 
@@ -154,6 +158,11 @@ public class MiniCP implements Solver {
 
     public void setTraceBPFlag(boolean traceBP) {
         MiniCP.traceBP = traceBP;
+    }
+
+    public void setTraceBPFlag(boolean traceBP, PrintStream stream){
+        MiniCP.traceBP = traceBP;
+        MiniCP.traceBPstream = stream;
     }
 
     public void setTraceSearchFlag(boolean traceSearch) {
@@ -325,10 +334,10 @@ public class MiniCP implements Solver {
             for (int iter = 1; iter <= beliefPropaMaxIter; iter++) {
                 BPiteration();
                 if (traceBP) {
-                    System.out.println("##### after BP iteration " + iter + " #####");
+                    traceBPstream.println("##### after BP iteration " + iter + " #####");
                     for (int i = 0; i < variables.size(); i++) {
-                        System.out.print(variables.get(i).getName());
-                        System.out.println(variables.get(i).toString());
+                        traceBPstream.print(variables.get(i).getName());
+                        traceBPstream.println(variables.get(i).toString());
                     }
                 }
                 previousEntropy = currentEntropy;
@@ -337,8 +346,8 @@ public class MiniCP implements Solver {
                 if (dampingMessages())
                     prevOutsideBeliefRecorded = true;
                 if (traceBP) {
-                    System.out.println("problem entropy = " + currentEntropy);
-                    System.out.println("smallest variable entropy = " + smallEntropy);
+                    traceBPstream.println("problem entropy = " + currentEntropy);
+                    traceBPstream.println("smallest variable entropy = " + smallEntropy);
                 }
                 if (traceEntropy) {
                     double minEntropy = 1;
@@ -402,10 +411,10 @@ public class MiniCP implements Solver {
             for (int iter = 1; iter <= nbIterations; iter++) {
                 BPiteration();
                 if (traceBP) {
-                    System.out.println("##### after BP iteration " + iter + " #####");
+                    traceBPstream.println("##### after BP iteration " + iter + " #####");
                     for (int i = 0; i < variables.size(); i++) {
-                        System.out.print(variables.get(i).getName());
-                        System.out.println(variables.get(i).toString());
+                        traceBPstream.print(variables.get(i).getName());
+                        traceBPstream.println(variables.get(i).toString());
                     }
                 }
             }
@@ -490,7 +499,7 @@ public class MiniCP implements Solver {
             }
         }
         if (traceBP) {
-            System.out.println("FINAL DAMPING FACTOR = " + dampingFactor());
+            traceBPstream.println("FINAL DAMPING FACTOR = " + dampingFactor());
         }
         if (dampingFactor() == 1.0) {
             setDamp(false);
