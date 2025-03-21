@@ -29,8 +29,6 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import org.antlr.v4.parse.ANTLRParser.throwsSpec_return;
-
 /**
  * Limited Discrepancy Search Branch and Bound implementation
  */
