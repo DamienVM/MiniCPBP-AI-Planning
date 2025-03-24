@@ -13,6 +13,10 @@ public class SolutionWriter {
     private FileWriter csvWriter;
     private int solutionCounter = 0;
 
+    public int  nSolutions(){
+        return solutionCounter;
+    }
+
     public SolutionWriter(boolean printToSout, String csvFileName) {
         this.printToSout = printToSout;
         if(csvFileName == null){
@@ -31,12 +35,15 @@ public class SolutionWriter {
         }
     }
 
-    public void newSolution(IntVar[] plan, int planCost) {
+    public void newSolution(IntVar[] plan, int planCost, String elapsedTime) {
         solutionCounter++;
         if (printToSout) {
-            System.out.println("--- Found plan of length " + plan.length + " and of cost " + planCost);
-            System.out.println("Solution #" + solutionCounter);
-            System.out.println("Plan: " + Arrays.toString(plan));
+            System.out.println(
+                    "Solution#" + solutionCounter +
+                    ", cost:"+ planCost +
+                    ", length:" + plan.length +
+                    ", time:" + elapsedTime);
+            System.out.println(Arrays.toString(plan));
             System.out.flush();
         }
         if (csvWriter != null) {

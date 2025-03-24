@@ -42,6 +42,14 @@ public class SearchStatistics {
                 + "\n\tcompleted : " + completed + "\n";
     }
 
+    public String longString(){
+        return    "#choice:" + nNodes
+                + ", #fail:" + nFailures
+                + ", execution time(ms):" + timeElapsed()
+                + ", #sols:" + nSolutions
+                + ", completed:" + completed;
+    }
+
     public void incrFailures() {
         nFailures++;
     }

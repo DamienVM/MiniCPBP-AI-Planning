@@ -26,7 +26,6 @@ import minicpbp.search.Search;
 import minicpbp.search.SearchStatistics;
 import minicpbp.util.exception.InconsistencyException;
 
-import java.lang.management.ManagementFactory;
 import java.util.HashMap;
 import java.util.Objects;
 
@@ -49,20 +48,17 @@ public class ClassicalAIplanning {
         String step;
         printInfoMessage(step = "Starting");
 
-        final long startCpuTime = ManagementFactory.getThreadMXBean().getThreadCpuTime(Thread.currentThread().getId());
-        final long startWallTime = System.currentTimeMillis();
-
-        PlanningMemoryUsage memoryUsage = new PlanningMemoryUsage();
-        memoryUsage.printMaxHeapMemory();
-        memoryUsage.printUsage("Base Memory Usage");
+        ExperimentResources exeStats = new ExperimentResources();
+        exeStats.printMaxHeapMemory();
+        exeStats.printStats("Base Memory Usage");
 
         // ============================
-        nlPrintInfoMessage(step = "Reading instance");
+        printInfoMessage(step = "Reading instance");
         PlanningInstance instance = new PlanningInstance(opt.get("instance"));
-        memoryUsage.printUsage(step);
+        exeStats.printStats(step);
 
         // ============================
-        nlPrintInfoMessage(step = "Start Search loops");
+        printInfoMessage(step = "Start Search loops");
         long totalTime = 0;
         final SolutionWriter solutionWriter = new SolutionWriter(true, opt.get("output"));
         currentBestPlanCost = instance.getUpperBoundCost();
@@ -72,8 +68,8 @@ public class ClassicalAIplanning {
                 if (currentBestPlanCost <= instance.getLowerBoundCost(length)) {
                     break; // current best is at least as good as lower bound on plan cost from that length on
                 }
-                System.out.println("_________________________________");
-                System.out.println("Search for plans of length : " + length);
+                System.out.println("—————————————————————————————————");
+                System.out.println("Search for plans of length: " + length);
                 try {
 
                     // ============================
@@ -82,7 +78,7 @@ public class ClassicalAIplanning {
                     Solver cp = model.getSolver();
                     IntVar[] action = model.getAction();
                     IntVar planCost = model.getPlanCost();
-                    memoryUsage.printUsage("CP model");
+                    exeStats.printStats("CP model init");
 
                     // ============================
                     step = "Defining the search";
@@ -94,9 +90,9 @@ public class ClassicalAIplanning {
                     else throw new IllegalArgumentException("Missing search option");
 
                     search.onSolution(() -> {
-                        solutionWriter.newSolution(action, planCost.min());
+                        exeStats.printStats("Solution found");
+                        solutionWriter.newSolution(action, planCost.min(), exeStats.elapsedCPUTimeStr());
                         currentBestPlanCost = planCost.min();
-                        memoryUsage.printUsage("Solution");
                     });
 
                     // ============================
@@ -105,23 +101,28 @@ public class ClassicalAIplanning {
                     //            SearchStatistics stats = search.optimize(obj, statistics -> (statistics.timeElapsed() >= timeout && statistics.numberOfFailures() >= failout));
                     SearchStatistics stats = search.optimize(obj,statistics -> false);
                     //            SearchStatistics stats = search.solve();
-                    System.out.println("== End plan search of length : " + length);
-                    System.out.format("== Search Statistics: %s", stats);
+                    System.out.println("Search over: " + stats.longString());
                     totalTime += stats.timeElapsed();
 
                 } catch (InconsistencyException e) {
-                    System.out.println("== No solution (Search inconsistent)");
+                    System.out.println("No solution (Search inconsistent)");
                 } finally {
                     System.out.println();
                 }
             }
             solutionWriter.close();
-            printInfoMessage("Search ended nicely");
+
+            if (solutionWriter.nSolutions() == 0){
+                printOutcome("unsolvable");
+            } else {
+                printOutcome("solved-opt");
+            }
         } catch (OutOfMemoryError error){
             System.out.println("MiniCPBP ran in an OutOfMemoryError while : " + step);
+            printOutcome("out-of-memory");
         }
-        printInfoMessage("full CPU time : " + (ManagementFactory.getThreadMXBean().getThreadCpuTime(Thread.currentThread().getId()) - startCpuTime )*1e-9+" s");
-        printInfoMessage("full wall time : " + (System.currentTimeMillis()-startWallTime)*1e-3+" s");
+        printInfoMessage("CPU time: " + exeStats.elapsedCPUTimeStr());
+        printInfoMessage("Wall time: " + exeStats.elapsedWallTime() );
         printInfoMessage("accumulated search time : "+totalTime*1e-3+" s");
     }
 
@@ -133,5 +134,8 @@ public class ClassicalAIplanning {
         System.out.println("[MiniCPBP] " + message);
     }
 
+    private static void printOutcome(String message){
+        printInfoMessage("CP solver outcome: " + message);
+    }
 
 }
