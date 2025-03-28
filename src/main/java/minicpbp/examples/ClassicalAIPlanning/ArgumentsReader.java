@@ -22,6 +22,11 @@ public class ArgumentsReader {
                 case "-search":
                     ret.put("search", args[++i]);
                     break;
+                case "-branching":
+                    ret.put("branching", args[++i]);
+                    break;
+                default:
+                    throw new RuntimeException(String.format("Option '%s' not recognized", args[i]));
             }
 
         }

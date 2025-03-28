@@ -24,10 +24,12 @@ import minicpbp.examples.ClassicalAIPlanning.*;
 import minicpbp.search.Objective;
 import minicpbp.search.Search;
 import minicpbp.search.SearchStatistics;
+import minicpbp.util.Procedure;
 import minicpbp.util.exception.InconsistencyException;
 
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import static minicpbp.cp.BranchingScheme.*;
 import static minicpbp.cp.Factory.*;
@@ -83,11 +85,37 @@ public class ClassicalAIplanning {
                     // ============================
                     step = "Defining the search";
                     Search search;
+                    Supplier<Procedure[]> branching = null;
+                    switch (opt.get("branching")){
+                        case "maxMarginal":
+                            branching = maxMarginal(action);
+                            break;
+                        case "lexicoMaxMarginalValue":
+                            branching = lexicoMaxMarginalValue(action);
+                            break;
+                        case "firstFailMaxMarginalValue":
+                            branching = firstFailMaxMarginalValue(action);
+                            break;
+//                        case "domWdegMaxMarginalValue":
+//                            branching = domWdegMaxMarginalValue(action);
+//                            break;
+                        case "maxMarginalStrength":
+                            branching = maxMarginalStrength(action);
+                            break;
+                        case "minEntropy":
+                            branching = minEntropy(action);
+                            break;
+                        default:
+                            throw new RuntimeException(String.format("Branching heuristic '%s' not recognized", opt.get("branching")));
+                    }
+
                     if (Objects.equals(opt.get("search"), "lds"))
-                        search = makeLds(cp, maxMarginal(action));
+                        search = makeLds(cp, branching);
                     else if (Objects.equals(opt.get("search"), "dfs"))
-                        search = makeDfs(cp, maxMarginal(action));
+                        search = makeDfs(cp, branching);
                     else throw new IllegalArgumentException("Missing search option");
+
+                    System.out.format("Solving with '%s' search and '%s' branching heuristic\n",opt.get("search"),opt.get("branching"));
 
                     search.onSolution(() -> {
                         exeStats.printStats("Solution found");
