@@ -29,6 +29,7 @@ import minicpbp.util.exception.InconsistencyException;
 
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import static minicpbp.cp.BranchingScheme.*;
@@ -96,9 +97,9 @@ public class ClassicalAIplanning {
                         case "firstFailMaxMarginalValue":
                             branching = firstFailMaxMarginalValue(action);
                             break;
-//                        case "domWdegMaxMarginalValue":
-//                            branching = domWdegMaxMarginalValue(action);
-//                            break;
+                        case "domWdegMaxMarginalValue":
+                            branching = domWdegMaxMarginalValue(action);
+                            break;
                         case "maxMarginalStrength":
                             branching = maxMarginalStrength(action);
                             break;
@@ -106,7 +107,8 @@ public class ClassicalAIplanning {
                             branching = minEntropy(action);
                             break;
                         default:
-                            throw new RuntimeException(String.format("Branching heuristic '%s' not recognized", opt.get("branching")));
+                            throw new IllegalArgumentException(
+                                    String.format("Branching heuristic '%s' not recognized", opt.get("branching")));
                     }
 
                     if (Objects.equals(opt.get("search"), "lds"))
@@ -115,11 +117,20 @@ public class ClassicalAIplanning {
                         search = makeDfs(cp, branching);
                     else throw new IllegalArgumentException("Missing search option");
 
-                    System.out.format("Solving with '%s' search and '%s' branching heuristic\n",opt.get("search"),opt.get("branching"));
+                    System.out.format("Solving with '%s' search and '%s' branching heuristic\n",
+                            opt.get("search"), opt.get("branching"));
+
+                    AtomicReference<Double> lastMeasurementTime = new AtomicReference<>(exeStats.elapsedCPUTime());
+                    cp.onFixPoint(() -> {
+                        if (lastMeasurementTime.get() + 30 < exeStats.elapsedCPUTime()){
+                            exeStats.printStats("Searching");
+                            lastMeasurementTime.set(exeStats.elapsedCPUTime());
+                        }
+                    });
 
                     search.onSolution(() -> {
-                        exeStats.printStats("Solution found");
                         solutionWriter.newSolution(action, planCost.min(), exeStats.elapsedCPUTimeStr());
+                        exeStats.printStats("Solution found");
                         currentBestPlanCost = planCost.min();
                     });
 
