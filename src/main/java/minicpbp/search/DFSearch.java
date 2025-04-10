@@ -307,6 +307,13 @@ public class DFSearch extends Search{
                 obj.tighten();
             });
         }
+        else {
+            onSolution(() -> {
+                if (obj.tracingOptimization()) {
+                    System.out.println(" (solution found in " + statistics.numberOfFailures() + " fails, " + statistics.numberOfNodes() + " choices and " + statistics.timeElapsed() + " msecs)");
+                }
+            });
+        }
         return solve(statistics, limit);
     }
 
