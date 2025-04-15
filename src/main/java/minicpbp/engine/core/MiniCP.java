@@ -377,9 +377,9 @@ public class MiniCP implements Solver {
                 if ((iter > 1) /* give it a chance to kick in */ && (currentEntropy == previousEntropy)) { // marginals probably did not change either (and won't in the future)
                     break;
                 }
-                if ((iter > 2) /* give it a chance to stabilize */ && (currentEntropy - previousEntropy > ENTROPY_TOLERANCE)) { // entropy actually increased
-                    break;
-                }
+//                if ((iter > 2) /* give it a chance to stabilize */ && (currentEntropy - previousEntropy > ENTROPY_TOLERANCE)) { // entropy actually increased
+//                    break;
+//                }
             }
         } catch (InconsistencyException e) {
             // empty the queue and unset the scheduled status
