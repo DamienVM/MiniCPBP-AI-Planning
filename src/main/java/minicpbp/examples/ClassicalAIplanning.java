@@ -79,6 +79,7 @@ public class ClassicalAIplanning {
                     step = "Defining the CP model";
                     PlanningModel model = new PlanningModel(instance, length, currentBestPlanCost);
                     Solver cp = model.getSolver();
+//                    cp.setTraceSearchFlag(true);
                     IntVar[] action = model.getAction();
                     IntVar planCost = model.getPlanCost();
                     exeStats.printStats("CP model init");
