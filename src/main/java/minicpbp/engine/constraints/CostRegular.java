@@ -436,11 +436,13 @@ public class CostRegular extends AbstractConstraint {
 	    }
         */
         // might as well achieve domain consistency on totalCost
-        s = totalCost.fillArray(domainValues);
-        for (int j = 0; j < s; j++) {
-            int r = domainValues[j];
-            if (beliefRep.isZero(localBelief(n, r))) {
-                totalCost.remove(r);
+        if (getSolver().actingOnZeroOneBelief()){
+            s = totalCost.fillArray(domainValues);
+            for (int j = 0; j < s; j++) {
+                int r = domainValues[j];
+                if (beliefRep.isZero(localBelief(n, r))) {
+                    totalCost.remove(r);
+                }
             }
         }
     }
