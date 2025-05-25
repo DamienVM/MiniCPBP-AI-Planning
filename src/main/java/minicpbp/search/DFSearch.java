@@ -349,9 +349,16 @@ public class DFSearch extends Search{
         if (!obj.problemIsBound()) { // avoid in special case of problem solved by propagation alone
             onSolution(() -> {
                 if (obj.tracingOptimization()) {
-                    System.out.println(" (solution found in " + statistics.numberOfFailures() + " fails and " + statistics.timeElapsed() + " msecs)");
+                    System.out.println(" (solution found in " + statistics.numberOfFailures() + " fails, " + statistics.numberOfNodes() + " choices and " + statistics.timeElapsed() + " msecs)");
                 }
                 obj.tighten();
+            });
+        }
+        else {
+            onSolution(() -> {
+                if (obj.tracingOptimization()) {
+                    System.out.println(" (solution found in " + statistics.numberOfFailures() + " fails, " + statistics.numberOfNodes() + " choices and " + statistics.timeElapsed() + " msecs)");
+                }
             });
         }
         return solveRestarts(statistics, limit);
@@ -376,9 +383,16 @@ public class DFSearch extends Search{
         if (!obj.problemIsBound()) { // avoid in special case of problem solved by propagation alone
             onSolution(() -> {
                 if (obj.tracingOptimization()) {
-                    System.out.println(" (solution found in " + statistics.numberOfFailures() + " fails and " + statistics.timeElapsed() + " msecs)");
+                    System.out.println(" (solution found in " + statistics.numberOfFailures() + " fails, " + statistics.numberOfNodes() + " choices and " + statistics.timeElapsed() + " msecs)");
                 }
                 obj.tighten();
+            });
+        }
+        else {
+            onSolution(() -> {
+                if (obj.tracingOptimization()) {
+                    System.out.println(" (solution found in " + statistics.numberOfFailures() + " fails, " + statistics.numberOfNodes() + " choices and " + statistics.timeElapsed() + " msecs)");
+                }
             });
         }
         return solveRestarts(statistics, limit, nbFailCutoff, restartFactor);

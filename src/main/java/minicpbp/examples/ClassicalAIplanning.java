@@ -21,6 +21,7 @@ package minicpbp.examples;
 import minicpbp.engine.core.IntVar;
 import minicpbp.engine.core.Solver;
 import minicpbp.examples.ClassicalAIPlanning.*;
+import minicpbp.search.DFSearch;
 import minicpbp.search.Objective;
 import minicpbp.search.Search;
 import minicpbp.search.SearchStatistics;
@@ -107,6 +108,13 @@ public class ClassicalAIplanning {
                         case "minEntropy":
                             branching = minEntropy(action);
                             break;
+                        case "domWdeg":
+                            if (Objects.equals(opt.get("search"), "lds")){
+                                throw new RuntimeException("Cant use lds with domWdeg");
+                            }
+                            branching = domWdeg(action);
+                            cp.setMode(Solver.PropaMode.SP);
+                            break;
                         default:
                             throw new IllegalArgumentException(
                                     String.format("Branching heuristic '%s' not recognized", opt.get("branching")));
@@ -138,9 +146,14 @@ public class ClassicalAIplanning {
                     // ============================
                     step = "Searching plans";
                     Objective obj = cp.minimize(planCost);
-                    //            SearchStatistics stats = search.optimize(obj, statistics -> (statistics.timeElapsed() >= timeout && statistics.numberOfFailures() >= failout));
-                    SearchStatistics stats = search.optimize(obj,statistics -> false);
-                    //            SearchStatistics stats = search.solve();
+                    SearchStatistics stats;
+                    if(Objects.equals(opt.get("branching"), "domWdeg")){
+                        assert search instanceof DFSearch;
+                        stats = ((DFSearch) search).optimizeRestarts(obj, statistics -> false);
+                    }
+                    else {
+                        stats = search.optimize(obj,statistics -> false);
+                    }
                     System.out.println("Search over: " + stats.longString());
                     totalTime += stats.timeElapsed();
 
