@@ -46,6 +46,8 @@ public class IntVarImpl implements IntVar {
     private StateStack<Constraint> constraints; //contains all constraints, allows us to get the failure count of all constraints applied to the variable
     private boolean isForBranching = false;
 
+    private boolean saidMarginalIsZero = false;
+
     private DomainListener domListener = new DomainListener() {
         @Override
         public void empty() {
@@ -357,6 +359,10 @@ public class IntVarImpl implements IntVar {
         assert b <= beliefRep.one() && b >= beliefRep.zero() : "b = " + b;
         assert domain.marginal(v) <= beliefRep.one() && domain.marginal(v) >= beliefRep.zero() : "domain.marginal(v) = " + domain.marginal(v);
         domain.setMarginal(v, beliefRep.multiply(domain.marginal(v), b));
+        if (!saidMarginalIsZero && Double.compare(+0.0f, domain.marginal(v)) == 0) {
+            System.out.println("Double underflow for marginal of variable "+this.name+" on value "+v);
+            saidMarginalIsZero = true;
+        }
     }
 
     @Override

@@ -88,6 +88,9 @@ public class ClassicalAIplanningNoOp {
                     case "maxMarginal":
                         branching = maxMarginal(action);
                         break;
+                    case "lexico":
+                        branching = lexico(action);
+                        break;
                     case "lexicoMaxMarginalValue":
                         branching = lexicoMaxMarginalValue(action);
                         break;
