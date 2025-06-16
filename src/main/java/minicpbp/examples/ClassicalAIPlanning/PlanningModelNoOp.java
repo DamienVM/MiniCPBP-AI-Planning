@@ -149,7 +149,7 @@ public class PlanningModelNoOp {
                         continue;
                     }
                     if (varsInConstraint.size() == 1){
-                        varsInConstraint.getFirst().removeBelow(rhs);
+                        varsInConstraint.get(0).removeBelow(rhs);
                     } else {
                         IntVar sumVar = sum(varsInConstraint.toArray(new IntVar[0]));
                         sumVar.setName("constraint_sum");
