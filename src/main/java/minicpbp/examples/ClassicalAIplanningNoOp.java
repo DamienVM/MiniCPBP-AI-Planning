@@ -28,6 +28,9 @@ import minicpbp.search.SearchStatistics;
 import minicpbp.util.Procedure;
 import minicpbp.util.exception.InconsistencyException;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
@@ -61,6 +64,17 @@ public class ClassicalAIplanningNoOp {
         PlanningInstance instance = new PlanningInstance(opt.get("instance"));
         exeStats.printStats(step);
 
+        String lp = null;
+        if(opt.containsKey("lp")){
+            try {
+                lp = new String(Files.readAllBytes(Paths.get(opt.get("lp"))));
+            } catch (IOException e){
+                System.out.println("Error while reading the lp problem.");
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
+
         // ============================
         printInfoMessage(step = "Start Search loops");
         long totalTime = 0;
@@ -73,7 +87,7 @@ public class ClassicalAIplanningNoOp {
             try {
                 // ============================
                 step = "Defining the CP model";
-                PlanningModelNoOp model = new PlanningModelNoOp(instance, instance.maxPlanLength, instance.minPlanLength);
+                PlanningModelNoOp model = new PlanningModelNoOp(instance, instance.maxPlanLength, instance.minPlanLength, lp);
                 Solver cp = model.getSolver();
 //                    cp.setTraceSearchFlag(true);
                 IntVar[] action = model.getAction();

@@ -25,6 +25,9 @@ public class ArgumentsReader {
                 case "-branching":
                     ret.put("branching", args[++i]);
                     break;
+                case "-lp":
+                    ret.put("lp", args[++i]);
+                    break;
                 default:
                     throw new RuntimeException(String.format("Option '%s' not recognized", args[i]));
             }
