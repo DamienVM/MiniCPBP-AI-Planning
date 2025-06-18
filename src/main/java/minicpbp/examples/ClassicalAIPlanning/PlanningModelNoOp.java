@@ -6,9 +6,7 @@ import minicpbp.engine.core.IntVar;
 import minicpbp.engine.core.Solver;
 import minicpbp.util.Automaton;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
@@ -93,26 +91,21 @@ public class PlanningModelNoOp {
         IntVar[] operatorCounts = makeIntVarArray(cp, instance.nbActions, 0, upper_bound);
         for (int i = 0; i < instance.nbActions; i++) {
             operatorCounts[i].setName("op_count_action_" + i);
+            cp.post(among(action, i, operatorCounts[i]));
         }
-        int[] vars = IntStream.range(0, instance.nbActions).toArray();
-        cp.post(cardinality(action, vars, operatorCounts));
 
-        Constraint sum = new Sum(operatorCounts, upper_bound);
-        sum.setWeight(0);
-        cp.post(sum);
+        cp.post(new Sum(operatorCounts, upper_bound));
 
-        parseAndAddOperatorCountingConstraints(lpProblemString, operatorCounts, upper_bound);
+        parseAndAddOperatorCountingConstraints(lpProblemString, operatorCounts);
     }
 
     /**
      * Parses the LP problem string and adds operator counting constraints to the model.
-     * Assumes the format provided in the problem description.
      *
      * @param lpProblemString The full LP problem string.
      * @param operatorCounts  An array of IntVar representing the counts of each operator (action).
-     * @param upperBound      The upper bound for the plan cost, used for constraint ranges.
      */
-    private void parseAndAddOperatorCountingConstraints(String lpProblemString, IntVar[] operatorCounts, int upperBound) {
+    private void parseAndAddOperatorCountingConstraints(String lpProblemString, IntVar[] operatorCounts) {
         Pattern subjectToPattern = Pattern.compile("Subject To\\s*(.*?)\\s*End", Pattern.DOTALL);
         Matcher subjectToMatcher = subjectToPattern.matcher(lpProblemString);
 
@@ -120,40 +113,71 @@ public class PlanningModelNoOp {
             String subjectToBlock = subjectToMatcher.group(1);
             String[] constraintLines = subjectToBlock.split("\\n");
 
-            Pattern constraintPattern = Pattern.compile("c\\d+:\\s*(.*?)\\s*>=\\s*(\\d+)");
-            Pattern variablePattern = Pattern.compile("x(\\d+)");
+            // Pattern for a constraint line: cX: <expression> <operator> <rhs>
+            Pattern constraintPattern = Pattern.compile("c\\d+:\\s*(.*?)\\s*(<|>|>=|<=|=)\\s*(-?\\d+)");
+            // Pattern for individual terms: [+|-]?\s*(\d*\s*x\d+)
+            // This captures the optional sign, optional coefficient, and the 'x' variable
+            Pattern termPattern = Pattern.compile("([+-]?\\s*\\d*\\s*x\\d+)");
 
+            String previousLine = "";
             for (String line : constraintLines) {
                 line = line.trim();
                 if (line.isEmpty()) continue;
 
+                line = previousLine + line;
                 Matcher constraintMatcher = constraintPattern.matcher(line);
-                if (constraintMatcher.matches()) {
-                    String terms = constraintMatcher.group(1);
-                    int rhs = Integer.parseInt(constraintMatcher.group(2));
+                if (! constraintMatcher.matches()) {
+                    previousLine = line;
+                }
+                else {
+                    previousLine = "";
+                    String expression = constraintMatcher.group(1);
+                    String operator = constraintMatcher.group(2);
+                    int rhs = Integer.parseInt(constraintMatcher.group(3));
 
-                    List<IntVar> varsInConstraint = new ArrayList<>();
-                    Matcher variableMatcher = variablePattern.matcher(terms);
-                    while (variableMatcher.find()) {
-                        int actionIdOffset = Integer.parseInt(variableMatcher.group(1));
-                        // Action IDs are offset by -1 from the problem description (x1 -> action 0)
-                        int actualActionId = actionIdOffset - 1;
-                        if (actualActionId >= 0 && actualActionId < operatorCounts.length) {
-                            varsInConstraint.add(operatorCounts[actualActionId]);
-                        } else {
-                            System.err.println("Warning: Action ID x" + actionIdOffset + " is out of bounds for operatorCounts array. Skipping.");
+                    List<IntVar> terms = new ArrayList<>();
+
+                    Matcher termMatcher = termPattern.matcher(expression);
+                    while (termMatcher.find()) {
+                        String term = termMatcher.group(1).trim();
+
+                        Pattern coeffPattern = Pattern.compile("([+-])?\\s*(\\d+)?\\s*x(\\d+)");
+                        Matcher coeffMatcher = coeffPattern.matcher(term);
+
+                        if(coeffMatcher.matches()){
+                            int coeff = coeffMatcher.group(2) != null ? Integer.parseInt(coeffMatcher.group(2)) : 1;
+                            coeff *= coeffMatcher.group(1) != null && coeffMatcher.group(1).equals("-") ? -1 : 1;;
+                            int varID = Integer.parseInt(coeffMatcher.group(3)) - 1;
+
+                            terms.add(mul(operatorCounts[varID], coeff));
                         }
                     }
 
-                    if (varsInConstraint.isEmpty()){
-                        continue;
-                    }
-                    if (varsInConstraint.size() == 1){
-                        varsInConstraint.get(0).removeBelow(rhs);
-                    } else {
-                        IntVar sumVar = sum(varsInConstraint.toArray(new IntVar[0]));
-                        sumVar.setName("constraint_sum");
-                        sumVar.removeBelow(rhs);
+                    IntVar[] expr = terms.toArray(new IntVar[0]);
+
+                    IntVar sum = expr.length == 1 ? expr[0] : sum(terms.toArray(new IntVar[0]));
+
+                    switch (operator) {
+                        case ">":
+                            sum.remove(rhs);
+                            sum.removeBelow(rhs);
+                            break;
+                        case ">=":
+                            sum.removeBelow(rhs);
+                            break;
+                        case "<":
+                            sum.remove(rhs);
+                            sum.removeAbove(rhs);
+                            break;
+                        case "<=":
+                            sum.removeAbove(rhs);
+                            break;
+                        case "=":
+                            sum.assign(rhs);
+                            break;
+                        default:
+                            System.err.println("Unsupported operator: " + operator + " in constraint: " + line);
+                            break;
                     }
                 }
             }
