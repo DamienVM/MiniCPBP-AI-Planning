@@ -29,8 +29,6 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import org.antlr.v4.parse.ANTLRParser.throwsSpec_return;
-
 /**
  * Limited Discrepancy Search Branch and Bound implementation
  */
@@ -220,9 +218,16 @@ public class LDSearch extends Search{
         if (!obj.problemIsBound()) { // avoid in special case of problem solved by propagation alone
             onSolution(() -> {
                 if (obj.tracingOptimization()) {
-                    System.out.println(" (solution found in " + statistics.numberOfFailures() + " fails and " + statistics.timeElapsed() + " msecs)");
+                    System.out.println(" (solution found in " + statistics.numberOfFailures() + " fails, " + statistics.numberOfNodes() + " choices and " + statistics.timeElapsed() + " msecs)");
                 }
                 obj.tighten();
+            });
+        }
+        else {
+            onSolution(() -> {
+                if (obj.tracingOptimization()) {
+                    System.out.println(" (solution found in " + statistics.numberOfFailures() + " fails, " + statistics.numberOfNodes() + " choices and " + statistics.timeElapsed() + " msecs)");
+                }
             });
         }
         return solve(statistics, limit);

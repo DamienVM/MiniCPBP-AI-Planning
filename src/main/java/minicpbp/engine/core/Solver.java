@@ -24,6 +24,7 @@ import minicpbp.state.StateStack;
 import minicpbp.util.Procedure;
 import minicpbp.util.Belief;
 
+import java.io.PrintStream;
 import java.util.Random;
 
 public interface Solver {
@@ -89,7 +90,13 @@ public interface Solver {
      * Activate trace of BP if @param traceBP is true
      */
     void setTraceBPFlag(boolean traceBP);
-    
+
+    /**
+     * Activate trace of BP if @param traceBP is true
+     * @param stream the stream where the PB trace is printed
+     */
+    void setTraceBPFlag(boolean traceBP, PrintStream stream);
+
     /**
      * Activate trace of search if @param traceSearch is true
      */
